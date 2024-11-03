@@ -11,6 +11,12 @@ start:
   RET;
 
 burst:
+  LDI R19, 255;
+  LDI R30, 0xFF;
+  LDI R31, 0x06;
+  ST Z, R19;
+  
+burst_2:
   CLI;                // Disable interrupts
   LDI R20, 250;
   CALL short_sync;    // 6 times short sync
@@ -24,18 +30,31 @@ burst:
   LDI R18, 0x00;
   LDI R19, 0x08;
 
-burst_2:
+burst_3:
   MOV R30, R18;
   CALL leer;
   NOP;
   CALL fotograma_b;
 
   ADD R18, R19;
-  BRCC burst_2;
+  BRCC burst_3;
   
   LDI R20, 200;        // 226 veces líneas de fondo
   CALL fotograma;
-  JMP burst;                  // 125
+
+  LDI R30, 0xFF;
+  LDI R31, 0x06;
+  LDI R18, 255;
+  LD R19, Z;
+  ADD R19, R18;
+  BRCC burst_4;
+  ST Z, R19;
+  
+  
+  JMP burst_2;                  // 125
+burst_4:
+  SEI;
+  RET;
 
 //-------------------------- SINCRONISMO CORTO, DEJA 5 CICLOS DE RELOJ
 short_sync:                 // time = 437.5
@@ -871,15 +890,15 @@ leer_3:               // Delay
 leer_4:               // 312.5 nanosegundos
   SBI PORTB, 1;       // Pin de blanco
   CBI PORTB, 0;       // Pin de sincronismo
-  LDI R21, 57;        // Número de iteraciones para el delay
+  LDI R21, 56;        // Número de iteraciones para el delay
 
 leer_5:               // Delay
-  ADD R21, R22;       // (199-1) * 250 + 250 = 49750 nanosegundos
+  ADD R21, R22;       // (200-1) * 250 + 250 = 50000 nanosegundos
   NOP;
   BRCC leer_5;
   NOP;
 
-leer_6:               // 1625 nanosegundos
+leer_6:               // 1375 nanosegundos
   LDI R31, 0x07       // Registro alto Z
   LD R23, Z+;         // Píxeles 1-8
   LD R24, Z+;         // Píxeles 9-16
@@ -890,8 +909,4 @@ leer_6:               // 1625 nanosegundos
   LD R29, Z+;         // Píxeles 49-56
   LD R30, Z;          // Píxeles 57-64
   LDI R20, 251;       // Registro 20, 5 iteraciones
-  NOP;                // Delay
-  NOP;
-  NOP;
-  NOP;
   RET;                // Retorno
